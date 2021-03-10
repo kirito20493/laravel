@@ -6,9 +6,21 @@ use Illuminate\Http\Request;
 use App\Models\Catagory;
 use App\Models\Product;
 use DB;
+use Illuminate\Support\Arr;
+
+use App\Repositories\Product\ProductRepositoryInterface;
+use App\Repositories\Catagory\CatagoryRepositoryInterface;
 
 class ProductController extends Controller
-{
+{   
+    protected $productRepo;
+    protected $catagoryRepo;
+
+    public function __construct(ProductRepositoryInterface $productRepo, CatagoryRepositoryInterface $catagoryRepo)
+    {
+        $this->productRepo = $productRepo;
+        $this->catagoryRepo = $catagoryRepo;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -16,10 +28,7 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = DB::table('products')
-        ->join('catagories','products.catalogID','=','catagories.id')
-        ->select('products.*','catagories.name as catalogname')
-        ->paginate(5);
+        $products = $this->productRepo->getAllProduct();
         return view('component.showListProduct')->with(['products' => $products]);
     }
 
@@ -30,7 +39,7 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $catagories = Catagory::all();
+        $catagories = $this->catagoryRepo->getAll();
         return view('component.createProduct')->with(['catagories' => $catagories]);
     }
 
@@ -43,12 +52,18 @@ class ProductController extends Controller
     public function store(Request $request)
     {   
         // validate
+        
         $validated = $request->validate([
             'name' => 'bail|required|unique:products',
             'price' => 'required',
             'desc' => 'required',
             'image_link' => 'bail|required|image|mimes:jpeg,png,jpg,gif,svg'
         ]);
+        //$data = $request->only('name', 'price', 'desc');
+        // $file = $request->image_link;
+        // $link = $file->getClientOriginalName();
+        // $data = Arr::add(['name'=>$request->name,'image_link'=> $link, 'price' => $request->price,], 'desc',$request->desc);
+
         $product = new Product;
         $product->name = $request->name;
         $product->price = $request->price;
@@ -58,6 +73,7 @@ class ProductController extends Controller
         $product->image_link = $file->getClientOriginalName();
         $file->move('images',$product->image_link);
         $product->save();
+        // $this->productRepo->create($data);
         return redirect()->route('show-list-product');
     }
 
@@ -70,7 +86,7 @@ class ProductController extends Controller
     public function show($id)
     {
         //
-        $product = Product::find($id);
+        $product = $this->productRepo->find($id);
         return view('component.detailProduct')->with(['product'=>$product]);
     }
 
@@ -83,8 +99,8 @@ class ProductController extends Controller
     public function edit($id)
     {
         //
-        $product = Product::find($id);
-        $catagories  = Catagory::all();
+        $product = $this->productRepo->find($id);
+        $catagories = $this->catagoryRepo->getAll();
         return view('component.editProduct')->with(['product'=>$product, 'catagories'=>$catagories]);
     }
 
@@ -117,6 +133,7 @@ class ProductController extends Controller
             $product->image_link = Product::find($id)->image_link;
         }
         $product->save();
+
         return redirect()->route('show-list-product');
     }
 
@@ -129,7 +146,8 @@ class ProductController extends Controller
     public function destroy($id)
     {
         //
-        Product::destroy($id);
+        // Product::destroy($id);
+        $this->productRepo->delete($id);
         return redirect()->route('show-list-product');
     }
 }

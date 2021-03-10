@@ -7,8 +7,16 @@ use App\Models\Catagory;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 
+use App\Repositories\Catagory\CatagoryRepositoryInterface;
+
 class CatagoryController extends Controller
 {
+    protected $catagory;
+
+    public function __construct(CatagoryRepositoryInterface $catagory)
+    {
+        $this->catagory = $catagory;
+    }
     //
     // show list catagories
     public function showListCatagory(){
@@ -29,7 +37,8 @@ class CatagoryController extends Controller
     }
     //delete catagory
     public function deletaCatagory($id){
-        Catagory::destroy($id);
+        // Catagory::destroy($id);
+        $this->catagory->delete($id);
         return redirect()->route('show-list-catagory');
     }
     // show form add catagory

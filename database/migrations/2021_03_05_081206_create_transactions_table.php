@@ -22,7 +22,7 @@ class CreateTransactionsTable extends Migration
             $table->timestamps();
         });
         Schema::table('transactions', function($table) {
-            $table->foreign('userID')->references('id')->on('users');
+            $table->foreign('userID')->references('id')->on('customers');
         });
     }
 
